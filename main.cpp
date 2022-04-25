@@ -37,7 +37,7 @@ public:
 	Player(Texture &image)
 	{
 		sprite.setTexture(image);
-		rect = FloatRect(0, 0, 24, 38);
+		rect = FloatRect(1 * 32, 1 * 32, 24, 38);
 		dx = dy = 0.1;
 		currentFrame = 0;
 	}
@@ -45,6 +45,7 @@ public:
 	void update(float time)
 	{
 		rect.left += dx;
+		CollisionX();
 
 		if (!onGround)
 		{
@@ -54,6 +55,8 @@ public:
 		rect.top += dy;
 
 		onGround = false;
+
+		CollisionY();
 
 		if (rect.top > ground)
 		{
@@ -84,6 +87,45 @@ public:
 		dx = 0;
 	}
 
+	void CollisionX()
+	{
+		for (int i = rect.top / 32; i < (rect.top + rect.height) / 32; i++)
+		{
+			for (int j = rect.left / 32; j < (rect.left + rect.width) / 32; j++)
+			{
+				if (TileMap[i][j] == 'B')
+				{
+					if (dx > 0) rect.left = j * 32 - rect.width;
+					if (dx < 0) rect.left = j * 32 + 32;
+				}
+			}
+		}
+	}
+
+	void CollisionY()
+	{
+		for (int i = rect.top / 32; i < (rect.top + rect.height) / 32; i++)
+		{
+			for (int j = rect.left / 32; j < (rect.left + rect.width) / 32; j++)
+			{
+				if (TileMap[i][j] == 'B')
+				{
+					if (dy > 0)
+					{
+						rect.top = i * 32 - rect.height;
+						dy = 0;
+						onGround = true;
+					}
+
+					if (dy < 0)
+					{
+						rect.top = i * 32 + 32;
+						dy = 0;
+					}
+				}
+			}
+		}
+	}
 };
 
 int main()
