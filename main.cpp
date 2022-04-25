@@ -1,7 +1,27 @@
 #include <SFML/Graphics.hpp>
 
 using namespace sf;
-int ground = 150;
+int ground = 400;
+
+const int H = 12;
+const int W = 40;
+
+String TileMap[H] = {
+
+"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+"B                                B     B",
+"B                                B     B",
+"B                                B     B",
+"B                                B     B",
+"B         0000                BBBB     B",
+"B                                B     B",
+"BBB                              B     B",
+"B              BB                BB    B",
+"B              BB                      B",
+"B    B         BB         BB           B",
+"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+
+};
 
 class Player
 {
@@ -18,7 +38,7 @@ public:
 	{
 		sprite.setTexture(image);
 		rect = FloatRect(0, 0, 24, 38);
-		dx = dy = 0;
+		dx = dy = 0.1;
 		currentFrame = 0;
 	}
 
@@ -68,8 +88,7 @@ public:
 
 int main()
 {
-	RenderWindow window(VideoMode(200, 200), "Test!");
-
+	RenderWindow window(VideoMode(600, 450), "Test!");
 
 	Texture texture;
 	texture.loadFromFile("walking.png");
@@ -79,6 +98,8 @@ int main()
 	Player player(texture);
 
 	Clock clock;
+
+	RectangleShape rectangle(Vector2f(32, 32));
 
 	while (window.isOpen())
 	{
@@ -109,7 +130,7 @@ int main()
 		{
 			if (player.onGround)
 			{
-				player.dy = -0.25;
+				player.dy = -0.35;
 				player.onGround = false;
 			}
 		}
@@ -117,6 +138,31 @@ int main()
 		player.update(time);
 
 		window.clear(Color::White);
+
+		for (int i = 0; i < H; i++)
+		{
+			for (int j = 0; j < W; j++)
+			{
+				if (TileMap[i][j] == 'B')
+				{
+					rectangle.setFillColor(Color::Black);
+				}
+
+				if (TileMap[i][j] == '0')
+				{
+					rectangle.setFillColor(Color::Green);
+				}
+
+				if (TileMap[i][j] == ' ')
+				{
+					continue;
+				}
+
+				rectangle.setPosition(j * 32, i * 32);
+				window.draw(rectangle);
+			}
+		}
+
 		window.draw(player.sprite);
 		window.display();
 	}
