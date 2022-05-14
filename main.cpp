@@ -1,10 +1,14 @@
 #include <SFML/Graphics.hpp>
 
 using namespace sf;
-int ground = 400;
+
+
+float offsetX = 0, offsetY = 0;
+
 
 const int H = 12;
 const int W = 40;
+
 
 String TileMap[H] = {
 
@@ -13,18 +17,17 @@ String TileMap[H] = {
 "B                                B     B",
 "B                                B     B",
 "B                                B     B",
-"B         0000                BBBB     B",
+"B         0000                WWWW     B",
 "B                                B     B",
 "BBB                              B     B",
-"B              BB                BB    B",
-"B              BB                      B",
-"B    B         BB         BB           B",
+"B              BB    W           BB    B",
+"B              BB   WSW                B",
+"B    B         BB    S    BB           B",
 "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
 
 };
 
-class Player
-{
+class PLAYER {
 
 public:
 
@@ -34,110 +37,77 @@ public:
 	Sprite sprite;
 	float currentFrame;
 
-	Player(Texture &image)
+	PLAYER(Texture& image)
 	{
 		sprite.setTexture(image);
-		rect = FloatRect(1 * 32, 1 * 32, 24, 38);
+		rect = FloatRect(7 * 32, 9 * 32, 40, 50);
+
 		dx = dy = 0.1;
 		currentFrame = 0;
 	}
 
+
 	void update(float time)
 	{
-		rect.left += dx;
-		CollisionX();
 
-		if (!onGround)
-		{
-			dy = dy + 0.0005;
-		}
+		rect.left += dx * time;
+		Collision(0);
 
-		rect.top += dy;
-
+		if (!onGround) dy = dy + 0.0005 * time;
+		rect.top += dy * time;
 		onGround = false;
+		Collision(1);
 
-		CollisionY();
 
-		if (rect.top > ground)
-		{
-			rect.top = ground;
-			dy = 0;
-			onGround = true;
-		}
+		currentFrame += 0.005 * time;
+		if (currentFrame > 6) currentFrame -= 6;
 
-		currentFrame += 0.005;
+		if (dx > 0) sprite.setTextureRect(IntRect(40 * int(currentFrame), 244, 40, 50));
+		if (dx < 0) sprite.setTextureRect(IntRect(40 * int(currentFrame) + 40, 244, -40, 50));
 
-		if (currentFrame > 6)
-		{
-			currentFrame -= 6;
-		}
 
-		if (dx > 0)
-		{
-			sprite.setTextureRect(IntRect(24 * int(currentFrame), 0, 24, 38));
-		}
-
-		if (dx < 0)
-		{
-			sprite.setTextureRect(IntRect(24 * int(currentFrame) + 24, 0, -24, 38));
-		}
-
-		sprite.setPosition(rect.left, rect.top);
+		sprite.setPosition(rect.left - offsetX, rect.top - offsetY);
 
 		dx = 0;
 	}
 
-	void CollisionX()
+
+
+	void Collision(int dir)
 	{
 		for (int i = rect.top / 32; i < (rect.top + rect.height) / 32; i++)
-		{
 			for (int j = rect.left / 32; j < (rect.left + rect.width) / 32; j++)
 			{
 				if (TileMap[i][j] == 'B')
 				{
-					if (dx > 0) rect.left = j * 32 - rect.width;
-					if (dx < 0) rect.left = j * 32 + 32;
+					if ((dx > 0) && (dir == 0)) rect.left = j * 32 - rect.width;
+					if ((dx < 0) && (dir == 0)) rect.left = j * 32 + 32;
+					if ((dy > 0) && (dir == 1)) { rect.top = i * 32 - rect.height;  dy = 0;   onGround = true; }
+					if ((dy < 0) && (dir == 1)) { rect.top = i * 32 + 32;   dy = 0; }
 				}
-			}
-		}
-	}
 
-	void CollisionY()
-	{
-		for (int i = rect.top / 32; i < (rect.top + rect.height) / 32; i++)
-		{
-			for (int j = rect.left / 32; j < (rect.left + rect.width) / 32; j++)
-			{
-				if (TileMap[i][j] == 'B')
+				if (TileMap[i][j] == '0')
 				{
-					if (dy > 0)
-					{
-						rect.top = i * 32 - rect.height;
-						dy = 0;
-						onGround = true;
-					}
-
-					if (dy < 0)
-					{
-						rect.top = i * 32 + 32;
-						dy = 0;
-					}
+					TileMap[i][j] = ' ';
 				}
+
 			}
-		}
+
 	}
 };
 
 int main()
 {
-	RenderWindow window(VideoMode(600, 450), "Test!");
+	RenderWindow window(VideoMode(600, 400), "Test!");
 
-	Texture texture;
-	texture.loadFromFile("walking.png");
+	Texture t;
+	t.loadFromFile("fang.png");
+
+	const sf::Texture TCONST;
 
 	float currentFrame = 0;
 
-	Player player(texture);
+	PLAYER p(t);
 
 	Clock clock;
 
@@ -148,65 +118,65 @@ int main()
 		float time = clock.getElapsedTime().asMicroseconds();
 		clock.restart();
 
-		Event event;
+		time = time / 700;
 
+		if (time > 20) time = 20;
+
+		Event event;
 		while (window.pollEvent(event))
 		{
 			if (event.type == Event::Closed)
-			{
 				window.close();
-			}
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Left))
 		{
-			player.dx = -0.1;
+			p.dx = -0.1;
+
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Right))
 		{
-			player.dx = 0.1;
+			p.dx = 0.1;
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Up))
 		{
-			if (player.onGround)
-			{
-				player.dy = -0.35;
-				player.onGround = false;
-			}
+			if (p.onGround) { p.dy = -0.35; p.onGround = false; }
 		}
 
-		player.update(time);
+		p.update(time);
+
+		if (p.rect.left > 300) offsetX = p.rect.left - 300;
+		offsetY = p.rect.top - 200;
 
 		window.clear(Color::White);
 
+
 		for (int i = 0; i < H; i++)
-		{
 			for (int j = 0; j < W; j++)
 			{
-				if (TileMap[i][j] == 'B')
-				{
-					rectangle.setFillColor(Color::Black);
-				}
+				if (TileMap[i][j] == 'B') rectangle.setFillColor(Color::Black);
 
-				if (TileMap[i][j] == '0')
-				{
-					rectangle.setFillColor(Color::Green);
-				}
+				if (TileMap[i][j] == '0')  rectangle.setFillColor(Color::Yellow);
 
-				if (TileMap[i][j] == ' ')
-				{
-					continue;
-				}
+				if (TileMap[i][j] == 'W')  rectangle.setFillColor(Color::Green);
 
-				rectangle.setPosition(j * 32, i * 32);
+				if (TileMap[i][j] == 'S')  rectangle.setFillColor(Color::Red);
+
+				if (TileMap[i][j] == ' ') continue;
+
+				rectangle.setPosition(j * 32 - offsetX, i * 32 - offsetY);
 				window.draw(rectangle);
 			}
-		}
 
-		window.draw(player.sprite);
+		window.draw(p.sprite);
 		window.display();
 	}
+
 	return 0;
 }
+
+
+
+
